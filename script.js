@@ -6,18 +6,31 @@
 document.addEventListener('DOMContentLoaded', () => {
 
 
-    // --- 1b. Page Loader ---
+    // --- 1a. Page Loader ---
     const loader = document.getElementById('pageLoader');
     if (loader) {
         setTimeout(() => {
             loader.classList.add('loaded');
             document.body.classList.add('page-loaded');
+            
+            // Trigger hero animations when loader finishes
+            const heroElements = document.querySelectorAll('.fade-in-up');
+            heroElements.forEach(el => {
+                el.style.animation = 'fadeInUp 0.8s var(--ease-editorial) forwards';
+            });
+            
             // Remove loader from DOM after fade-out transition
-            setTimeout(() => loader.remove(), 600);
+            setTimeout(() => {
+                if (loader && loader.parentElement) loader.remove();
+            }, 800);
         }, 1200);
     } else {
         // No loader element — trigger hero animations immediately
         document.body.classList.add('page-loaded');
+        const heroElements = document.querySelectorAll('.fade-in-up');
+        heroElements.forEach(el => {
+            el.style.animation = 'fadeInUp 0.8s var(--ease-editorial) forwards';
+        });
     }
 
     // --- 2. Auto-Hiding Navbar Scroll Event ---
@@ -62,11 +75,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Close menu when clicking individual mobile links
     individualLinks.forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            
+            // Close menu with animation
             if (navLinks.classList.contains('active')) {
                 toggleMenu();
             }
+            
+            // Navigate to section after menu closes
+            setTimeout(() => {
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 300);
         });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.navbar-container') && navLinks.classList.contains('active')) {
+            toggleMenu();
+        }
     });
 
     // --- 4. Scroll-Spy (Highlight Active Nav Link) ---
@@ -710,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Create an Email Template with variables: {{from_name}}, {{from_email}}, {{message}}
         // 4. Copy your Public Key, Service ID, and Template ID below
         // ============================================================
-        const EMAILJS_PUBLIC_KEY = "Z0CUewLvEi8J7LtpL";   // e.g. 'aBcDeFgHiJkLmNoP'
+        const EMAILJS_PUBLIC_KEY = "0tlpurJ3jEg3FPcbr";   // e.g. 'aBcDeFgHiJkLmNoP'
         const EMAILJS_SERVICE_ID = "service_vtkr2cn";    // e.g. 'service_xxxxxxx'
         const EMAILJS_TEMPLATE_ID = "template_879uhv8";  // e.g. 'template_xxxxxxx'
 
