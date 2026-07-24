@@ -428,14 +428,12 @@ p strong {
     position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
 }
 
 @media (min-width: 768px) {
     .hero-container {
-        align-items: flex-start;
-        text-align: left;
         margin: 0;
     }
 }
@@ -517,14 +515,9 @@ p strong {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
-@media (min-width: 768px) {
-    .hero-actions {
-        justify-content: flex-start;
-    }
-}
 
 /* Buttons */
 .btn {
@@ -1068,17 +1061,14 @@ p strong {
     display: grid;
     grid-template-columns: 1fr;
     gap: 2.5rem;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 @media (min-width: 768px) {
     .projects-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1200px) {
-    .projects-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        max-width: 900px;
     }
 }
 
@@ -1774,7 +1764,7 @@ p strong {
     box-shadow: 0 0 12px rgba(184, 255, 87, 0.15);
     transform: translateY(-2px);
 }
-/* ─── Hero Two-Column Layout ──────────────────────────────── */
+/* ─── Hero Centered Layout ──────────────────────────────── */
 #hero {
     min-height: 100vh;
     display: flex;
@@ -1796,69 +1786,20 @@ p strong {
 .hero-layout {
     position: relative;
     z-index: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
     width: 100%;
     padding-top: 80px;
     /* clear navbar */
 }
 
-.hero-visual {
-    position: relative;
-    width: 100%;
-    height: 520px;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(0, 212, 255, 0.07);
-    background-color: #0a0a0f;
-}
-
-#skillOrb {
-    display: block;
-    width: 100%;
-    height: 100%;
-   
-}
-
-.orb-hint {
-    position: absolute;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.6rem;
-    color: rgba(0, 212, 255, 0.35);
-    letter-spacing: 0.14em;
-    pointer-events: none;
-    white-space: nowrap;
-    transition: opacity 0.8s ease;
-}
-
-.hero-visual:hover .orb-hint {
-    opacity: 0;
-}
-
-.hero-stagger-child {
-    opacity: 0;
-    transform: translateY(20px);
-}
-
-body.page-loaded .hero-stagger-child {
-    animation: fadeInUp 0.8s var(--ease-editorial) forwards;
-    animation-delay: 500ms;
-}
-
 @media (max-width: 768px) {
     .hero-layout {
-        grid-template-columns: 1fr;
-        gap: 3rem;
         padding-top: 100px;
         padding-bottom: 3rem;
-    }
-
-    .hero-visual {
-        height: 320px !important;
     }
 }
 
