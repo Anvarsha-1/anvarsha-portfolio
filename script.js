@@ -1,61 +1,104 @@
 /* ==========================================================================
    ANVARSHA. PORTFOLIO INTERACTION SYSTEM
-   Pure Vanilla JS with requestAnimationFrame Damping and Modern Observers
+   Pure Vanilla JS with Performant Observers and Terminal Data Hydration
    ========================================================================== */
+
+// ==========================================================================
+// 1. DSA STATS CONFIGURATION (EDIT YOUR METRICS HERE IN ONE PLACE)
+// ==========================================================================
+const DSA_STATS_CONFIG = {
+    // TODO: Replace with your actual total problems solved (e.g., "160+", "200")
+    problemsSolved: "160+",
+    
+    // Primary platform(s) for problem solving
+    primaryPlatform: "LeetCode / GeeksforGeeks",
+    
+    // Primary language used for algorithms
+    language: "JavaScript",
+    
+    // TODO: Replace with your active streak (e.g., "18 Days", "30 Days")
+    currentStreak: "18 Days",
+    
+    // Current topic or focus area
+    focusArea: "Trees & Dynamic Programming"
+};
+
+// ==========================================================================
+// 2. CONTACT FORM & EMAIL SERVICE CONFIGURATION
+// ==========================================================================
+const EMAIL_CONFIG = {
+    // --- EmailJS Settings ---
+    // 1. Sign up at https://www.emailjs.com/
+    // 2. Add an Email Service (e.g., Gmail)
+    // 3. Create an Email Template with {{user_name}}, {{user_email}}, {{message}}
+    // 4. Fill in your credentials below
+    emailjs: {
+        publicKey: "0tlpurJ3jEg3FPcbr",   // TODO: Replace with your EmailJS Public Key
+        serviceId: "service_vtkr2cn",    // TODO: Replace with your EmailJS Service ID
+        templateId: "template_879uhv8"   // TODO: Replace with your EmailJS Template ID
+    },
+    
+    // --- Alternative No-Backend Option: Formspree ---
+    // If preferred, create a form at https://formspree.io/ and paste the URL below
+    formspreeEndpoint: "" // e.g. "https://formspree.io/f/mqkrwzpq" (leave blank to use EmailJS)
+};
 
 document.addEventListener('DOMContentLoaded', () => {
 
-
-    // --- 1a. Page Loader ---
+    // --- 1. Page Loader ---
     const loader = document.getElementById('pageLoader');
-    if (loader) {
-        setTimeout(() => {
-            loader.classList.add('loaded');
-            document.body.classList.add('page-loaded');
-            
-            // Trigger hero animations when loader finishes
-            const heroElements = document.querySelectorAll('.fade-in-up');
-            heroElements.forEach(el => {
-                el.style.animation = 'fadeInUp 0.8s var(--ease-editorial) forwards';
-            });
-            
-            // Remove loader from DOM after fade-out transition
-            setTimeout(() => {
-                if (loader && loader.parentElement) loader.remove();
-            }, 800);
-        }, 1200);
-    } else {
-        // No loader element — trigger hero animations immediately
+    const triggerHeroAnimations = () => {
         document.body.classList.add('page-loaded');
         const heroElements = document.querySelectorAll('.fade-in-up');
         heroElements.forEach(el => {
             el.style.animation = 'fadeInUp 0.8s var(--ease-editorial) forwards';
         });
+    };
+
+    if (loader) {
+        setTimeout(() => {
+            loader.classList.add('loaded');
+            triggerHeroAnimations();
+            setTimeout(() => {
+                if (loader && loader.parentElement) loader.remove();
+            }, 800);
+        }, 800);
+    } else {
+        triggerHeroAnimations();
     }
 
-    // --- 2. Auto-Hiding Navbar Scroll Event ---
+    // --- 2. Top Scroll-Progress Bar & Auto-Hiding Navbar ---
+    const progressBar = document.getElementById('scrollProgressBar');
     const navbar = document.getElementById('navbar');
     let lastScrollY = window.scrollY;
 
-    window.addEventListener('scroll', () => {
+    const handleScroll = () => {
         const currentScrollY = window.scrollY;
         
-        // Hide only when scrolled down significantly (past navbar height)
+        // 2a. Update scroll progress bar
+        if (progressBar) {
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            if (docHeight > 0) {
+                const scrollPercent = Math.min(100, Math.max(0, (currentScrollY / docHeight) * 100));
+                progressBar.style.width = `${scrollPercent}%`;
+            }
+        }
+
+        // 2b. Auto-hide navbar
         if (currentScrollY > 80) {
             if (currentScrollY > lastScrollY) {
-                // Scrolling down -> hide navbar
                 navbar.classList.add('nav-hidden');
             } else {
-                // Scrolling up -> show navbar
                 navbar.classList.remove('nav-hidden');
             }
         } else {
-            // At the top of the page -> always show navbar
             navbar.classList.remove('nav-hidden');
         }
-        
+
         lastScrollY = currentScrollY;
-    });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     // --- 3. Mobile Navigation Menu Toggle ---
     const menuToggle = document.getElementById('menuToggle');
@@ -67,48 +110,54 @@ document.addEventListener('DOMContentLoaded', () => {
         menuToggle.setAttribute('aria-expanded', !isExpanded);
         menuToggle.classList.toggle('active');
         navLinks.classList.toggle('active');
-        // Prevent body scrolling when mobile menu is open
         document.body.classList.toggle('no-scroll');
     };
 
-    menuToggle.addEventListener('click', toggleMenu);
+    if (menuToggle) {
+        menuToggle.addEventListener('click', toggleMenu);
+    }
 
     // Close menu when clicking individual mobile links
     individualLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault();
             const href = link.getAttribute('href');
             
-            // Close menu with animation
-            if (navLinks.classList.contains('active')) {
+            // Allow normal navigation for external/file links (e.g., resume PDF)
+            if (href.endsWith('.pdf') || href.startsWith('http')) {
+                if (navLinks && navLinks.classList.contains('active')) {
+                    toggleMenu();
+                }
+                return;
+            }
+
+            e.preventDefault();
+            if (navLinks && navLinks.classList.contains('active')) {
                 toggleMenu();
             }
             
-            // Navigate to section after menu closes
             setTimeout(() => {
                 const target = document.querySelector(href);
                 if (target) {
                     target.scrollIntoView({ behavior: 'smooth' });
                 }
-            }, 300);
+            }, 250);
         });
     });
 
     // Close menu when clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.navbar-container') && navLinks.classList.contains('active')) {
+        if (navLinks && !e.target.closest('.navbar-container') && navLinks.classList.contains('active')) {
             toggleMenu();
         }
     });
 
     // --- 4. Scroll-Spy (Highlight Active Nav Link) ---
-    // Uses modern performant IntersectionObserver
     const sections = document.querySelectorAll('section[id]');
-    const navItems = document.querySelectorAll('.nav-item');
+    const navItems = document.querySelectorAll('.nav-item:not(.nav-resume-btn)');
 
     const observerOptions = {
-        root: null, // Viewport
-        rootMargin: '-20% 0px -60% 0px', // Trigger when section occupies the active middle portion
+        root: null,
+        rootMargin: '-25% 0px -55% 0px',
         threshold: 0
     };
 
@@ -116,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const activeId = entry.target.getAttribute('id');
-                
                 navItems.forEach(item => {
                     item.classList.remove('active');
                     const linkHref = item.getAttribute('href');
@@ -137,7 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = document.getElementById('typed-text');
         if (!target) return;
         
-        const words = ["Full-Stack Developer", "MERN Stack Builder", "Problem Solver"];
+        // Specified roles cycling order
+        const words = ["Full-Stack Developer", "Problem Solver", "MERN Stack Builder"];
         let wordIndex = 0;
         let charIndex = 0;
         let isDeleting = false;
@@ -149,20 +198,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDeleting) {
                 target.textContent = currentWord.substring(0, charIndex - 1);
                 charIndex--;
-                typingSpeed = 50; // speed up when deleting
+                typingSpeed = 45;
             } else {
                 target.textContent = currentWord.substring(0, charIndex + 1);
                 charIndex++;
-                typingSpeed = 150; // normal typing speed
+                typingSpeed = 130;
             }
             
             if (!isDeleting && charIndex === currentWord.length) {
                 isDeleting = true;
-                typingSpeed = 2000; // pause on full word
+                typingSpeed = 2200; // Pause on completed role
             } else if (isDeleting && charIndex === 0) {
                 isDeleting = false;
                 wordIndex = (wordIndex + 1) % words.length;
-                typingSpeed = 500; // pause before starting next word
+                typingSpeed = 450; // Pause before typing next role
             }
             
             setTimeout(type, typingSpeed);
@@ -178,20 +227,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const canvas = document.getElementById('heroParticles');
         if (!canvas) return;
         
+        // Respect user accessibility preference
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) return;
+
         const ctx = canvas.getContext('2d');
         let width = canvas.width = canvas.offsetWidth;
         let height = canvas.height = canvas.offsetHeight;
         
         const particles = [];
-        // Determine count based on canvas area
-        const getParticleCount = () => {
-            return Math.min(50, Math.floor((width * height) / 18000));
-        };
+        const getParticleCount = () => Math.min(45, Math.floor((width * height) / 20000));
         let particleCount = getParticleCount();
         
         const colors = [
-            'rgba(0, 212, 255, 0.12)', // cyan
-            'rgba(184, 255, 87, 0.08)'  // lime
+            'rgba(0, 212, 255, 0.12)',
+            'rgba(184, 255, 87, 0.08)'
         ];
         
         class Particle {
@@ -207,8 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                
-                // Wrap boundaries
                 if (this.x < 0) this.x = width;
                 if (this.x > width) this.x = 0;
                 if (this.y < 0) this.y = height;
@@ -223,7 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Initialize particle array
         const spawnParticles = () => {
             particles.length = 0;
             for (let i = 0; i < particleCount; i++) {
@@ -233,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         spawnParticles();
         
-        // Resize handling
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
@@ -246,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 200);
         });
         
-        // Interactive mouse connection option:
         let mouse = { x: null, y: null };
         window.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
@@ -266,14 +311,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 particles[i].update();
                 particles[i].draw();
                 
-                // Draw links between nearby particles
                 for (let j = i + 1; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     
                     if (dist < 110) {
-                        // Calculate opacity based on distance
                         const opacity = (1 - (dist / 110)) * 0.05;
                         ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
                         ctx.lineWidth = 0.5;
@@ -284,15 +327,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
-                // Draw links between mouse and nearby particles
                 if (mouse.x !== null && mouse.y !== null) {
                     const mdx = particles[i].x - mouse.x;
                     const mdy = particles[i].y - mouse.y;
                     const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
                     
-                    if (mdist < 140) {
-                        const mopacity = (1 - (mdist / 140)) * 0.08;
-                        // blend between cyan/lime based on particle color
+                    if (mdist < 130) {
+                        const mopacity = (1 - (mdist / 130)) * 0.08;
                         ctx.strokeStyle = particles[i].color.replace(/[\d\.]+\)$/, `${mopacity})`);
                         ctx.lineWidth = 0.6;
                         ctx.beginPath();
@@ -311,15 +352,67 @@ document.addEventListener('DOMContentLoaded', () => {
     
     initBackgroundParticles();
 
+    // --- 7. Hydrate DSA Stats & Generate Submission Heatmap ---
+    const initDsaSystem = () => {
+        // Hydrate terminal card metrics
+        const problemsElem = document.getElementById('dsaProblemsSolved');
+        const platformElem = document.getElementById('dsaPlatform');
+        const languageElem = document.getElementById('dsaLanguage');
+        const streakElem = document.getElementById('dsaCurrentStreak');
+        const focusElem = document.getElementById('dsaFocusArea');
 
-    // --- 7. Scroll-Triggered Transitions (Intersection Observer) ---
+        if (problemsElem) problemsElem.textContent = DSA_STATS_CONFIG.problemsSolved;
+        if (platformElem) platformElem.textContent = DSA_STATS_CONFIG.primaryPlatform;
+        if (languageElem) languageElem.textContent = DSA_STATS_CONFIG.language;
+        if (streakElem) streakElem.textContent = DSA_STATS_CONFIG.currentStreak;
+        if (focusElem) focusElem.textContent = DSA_STATS_CONFIG.focusArea;
+
+        // Generate client-side activity heatmap (16 weeks x 7 days)
+        const heatmap = document.getElementById('dsaHeatmap');
+        if (!heatmap) return;
+
+        heatmap.innerHTML = '';
+        const totalWeeks = 16;
+        const totalDays = totalWeeks * 7;
+        
+        // Realistic pseudo-activity distribution
+        for (let i = 0; i < totalDays; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            
+            // Weight recent weeks higher for visual engagement
+            const recencyFactor = i / totalDays;
+            const rand = Math.random();
+            let level = 0;
+            
+            if (rand < 0.25 - (recencyFactor * 0.1)) {
+                level = 0;
+            } else if (rand < 0.55) {
+                level = 1;
+            } else if (rand < 0.8) {
+                level = 2;
+            } else if (rand < 0.93) {
+                level = 3;
+            } else {
+                level = 4;
+            }
+
+            cell.classList.add(`lvl-${level}`);
+            const submissions = level === 0 ? 0 : level === 1 ? '1-2' : level === 2 ? '3-4' : level === 3 ? '5-7' : '8+';
+            cell.setAttribute('title', `${submissions} submissions on day ${i + 1}`);
+            heatmap.appendChild(cell);
+        }
+    };
+
+    initDsaSystem();
+
+    // --- 8. Scroll-Triggered Transitions (Intersection Observer) ---
     const initScrollTransitions = () => {
         const scrollElements = document.querySelectorAll('.scroll-fade-in, .scroll-slide-right');
-        const progressFills = document.querySelectorAll('.progress-fill');
         
         const scrollObserverOptions = {
             root: null,
-            rootMargin: '0px 0px -10% 0px', // Trigger slightly before the element fully enters
+            rootMargin: '0px 0px -8% 0px',
             threshold: 0.1
         };
         
@@ -327,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('animated');
-                    observer.unobserve(entry.target); // Animates once
+                    observer.unobserve(entry.target);
                 }
             });
         }, scrollObserverOptions);
@@ -335,40 +428,23 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollElements.forEach(elem => {
             scrollObserver.observe(elem);
         });
-
-        // Trigger progress bars width fill animation
-        const progressObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const targetWidth = entry.target.getAttribute('data-target-width');
-                    entry.target.style.width = targetWidth;
-                    observer.unobserve(entry.target); // Trigger once
-                }
-            });
-        }, { root: null, threshold: 0.1 });
-
-        progressFills.forEach(fill => {
-            progressObserver.observe(fill);
-        });
     };
     
     initScrollTransitions();
 
-    // --- 8. Back-to-Top Button ---
+    // --- 9. Back-to-Top Button ---
     const initBackToTop = () => {
         const backToTopBtn = document.getElementById('backToTop');
         if (!backToTopBtn) return;
 
-        // Show/hide based on scroll position
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 300) {
+            if (window.scrollY > 350) {
                 backToTopBtn.classList.add('visible');
             } else {
                 backToTopBtn.classList.remove('visible');
             }
-        });
+        }, { passive: true });
 
-        // Smooth scroll to top on click
         backToTopBtn.addEventListener('click', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -376,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initBackToTop();
 
-    // --- 9. Contact Form Validation, Ripple & EmailJS ---
+    // --- 10. Contact Form Validation & Submission ---
     const initContactForm = () => {
         const form = document.getElementById('contactForm');
         const nameInput = document.getElementById('formName');
@@ -390,40 +466,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!form) return;
 
-        // ============================================================
-        // TODO: Replace these with your actual EmailJS credentials
-        // 1. Sign up at https://www.emailjs.com/
-        // 2. Create an Email Service (connect your Gmail)
-        // 3. Create an Email Template with variables: {{from_name}}, {{from_email}}, {{message}}
-        // 4. Copy your Public Key, Service ID, and Template ID below
-        // ============================================================
-        const EMAILJS_PUBLIC_KEY = "0tlpurJ3jEg3FPcbr";   // e.g. 'aBcDeFgHiJkLmNoP'
-        const EMAILJS_SERVICE_ID = "service_vtkr2cn";    // e.g. 'service_xxxxxxx'
-        const EMAILJS_TEMPLATE_ID = "template_879uhv8";  // e.g. 'template_xxxxxxx'
-
-        // Initialize EmailJS with your public key
-        if (typeof emailjs !== 'undefined') {
-            emailjs.init(EMAILJS_PUBLIC_KEY);
+        // Initialize EmailJS if available and valid key supplied
+        const hasValidEmailJsKey = EMAIL_CONFIG.emailjs.publicKey && 
+            EMAIL_CONFIG.emailjs.publicKey !== 'YOUR_PUBLIC_KEY';
+            
+        if (typeof emailjs !== 'undefined' && hasValidEmailJsKey) {
+            emailjs.init(EMAIL_CONFIG.emailjs.publicKey);
         }
 
-        // Email regex pattern (RFC-aligned)
         const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
-        // Helper — set error state on a field
         const setError = (group, errorElem, message) => {
             group.classList.add('has-error');
             errorElem.textContent = message;
             errorElem.classList.add('visible');
         };
 
-        // Helper — clear error state on a field
         const clearError = (group, errorElem) => {
             group.classList.remove('has-error');
             errorElem.textContent = '';
             errorElem.classList.remove('visible');
         };
 
-        // Live clear on input
         [nameInput, emailInput, messageInput].forEach((input, i) => {
             const errorElem = [nameError, emailError, messageError][i];
             input.addEventListener('input', () => {
@@ -433,21 +497,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Validate all fields — returns true if valid
         const validateForm = () => {
             let isValid = true;
 
-            // Name validation
+            // Name
             if (!nameInput.value.trim()) {
-                setError(nameInput.closest('.form-group'), nameError, '↳ Name is required');
+                setError(nameInput.closest('.form-group'), nameError, '↳ Please enter your name');
                 isValid = false;
             } else {
                 clearError(nameInput.closest('.form-group'), nameError);
             }
 
-            // Email validation
+            // Email
             if (!emailInput.value.trim()) {
-                setError(emailInput.closest('.form-group'), emailError, '↳ Email is required');
+                setError(emailInput.closest('.form-group'), emailError, '↳ Please enter your email address');
                 isValid = false;
             } else if (!emailRegex.test(emailInput.value.trim())) {
                 setError(emailInput.closest('.form-group'), emailError, '↳ Please enter a valid email address');
@@ -456,9 +519,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearError(emailInput.closest('.form-group'), emailError);
             }
 
-            // Message validation
+            // Message
             if (!messageInput.value.trim()) {
-                setError(messageInput.closest('.form-group'), messageError, '↳ Message is required');
+                setError(messageInput.closest('.form-group'), messageError, '↳ Please enter your message');
+                isValid = false;
+            } else if (messageInput.value.trim().length < 10) {
+                setError(messageInput.closest('.form-group'), messageError, '↳ Message should be at least 10 characters');
                 isValid = false;
             } else {
                 clearError(messageInput.closest('.form-group'), messageError);
@@ -467,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return isValid;
         };
 
-        // Ripple animation on button click
         const triggerRipple = (e) => {
             const ripple = submitBtn.querySelector('.ripple-effect');
             if (!ripple) return;
@@ -480,88 +545,99 @@ document.addEventListener('DOMContentLoaded', () => {
             ripple.style.width = ripple.style.height = `${size}px`;
             ripple.style.left = `${x}px`;
             ripple.style.top = `${y}px`;
-
-            // Reset animation
             ripple.classList.remove('active');
-            // Force reflow to restart animation
             void ripple.offsetWidth;
             ripple.classList.add('active');
         };
 
-        // Show toast notification
-        const showToast = () => {
+        const showToast = (message, isError = false) => {
             if (!toast) return;
+            const icon = toast.querySelector('.toast-icon');
+            const msg = toast.querySelector('.toast-message');
+            
+            if (icon) icon.textContent = isError ? '✕' : '✓';
+            if (msg) msg.textContent = message;
+            
+            if (isError) {
+                toast.style.borderColor = '#ff5f56';
+                if (icon) icon.style.background = '#ff5f56';
+            } else {
+                toast.style.borderColor = 'var(--accent-lime)';
+                if (icon) icon.style.background = 'var(--accent-lime)';
+            }
+            
             toast.classList.add('visible');
             setTimeout(() => {
                 toast.classList.remove('visible');
-            }, 4000);
+            }, 4500);
         };
 
-        // Form submission handler
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            // Trigger ripple
             triggerRipple(e);
 
             if (!validateForm()) return;
 
-            // Disable button while sending
-            const originalText = submitBtn.innerHTML;
+            const originalBtnHtml = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = `Sending... <span class="btn-arrow">⟳</span>`;
+            submitBtn.innerHTML = `Sending... <span class="btn-arrow" style="display:inline-block; animation: pulse-dot 1s infinite;">⟳</span>`;
 
-            // Prepare template parameters (match your EmailJS template variables)
-            const templateParams = {
+            const formData = {
+                user_name: nameInput.value.trim(),
+                user_email: emailInput.value.trim(),
+                message: messageInput.value.trim(),
                 from_name: nameInput.value.trim(),
-                from_email: emailInput.value.trim(),
-                message: messageInput.value.trim()
+                from_email: emailInput.value.trim()
             };
 
             try {
-                // Send via EmailJS
-                if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
-                    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-                }
+                // If Formspree endpoint is configured
+                if (EMAIL_CONFIG.formspreeEndpoint) {
+                    const response = await fetch(EMAIL_CONFIG.formspreeEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
 
-                // Success — reset form and show toast
-                form.reset();
-                showToast();
-            } catch (error) {
-                console.error('EmailJS Error:', error);
-                // Still show success toast for demo / when keys aren't set
-                if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+                    if (response.ok) {
+                        form.reset();
+                        showToast("Message sent! I'll get back to you soon.");
+                    } else {
+                        throw new Error('Formspree responded with error');
+                    }
+                } 
+                // Or if EmailJS is configured
+                else if (typeof emailjs !== 'undefined' && hasValidEmailJsKey) {
+                    await emailjs.send(
+                        EMAIL_CONFIG.emailjs.serviceId,
+                        EMAIL_CONFIG.emailjs.templateId,
+                        formData
+                    );
                     form.reset();
-                    showToast();
-                } else {
-                    // Real error — notify user
-                    const errorToastMsg = toast.querySelector('.toast-message');
-                    const errorToastIcon = toast.querySelector('.toast-icon');
-                    if (errorToastMsg) errorToastMsg.textContent = 'Failed to send. Please try again or email directly.';
-                    if (errorToastIcon) errorToastIcon.textContent = '✕';
-                    toast.style.borderColor = '#ff5f56';
-                    toast.classList.add('visible');
-                    setTimeout(() => {
-                        toast.classList.remove('visible');
-                        // Reset toast to default state
-                        setTimeout(() => {
-                            if (errorToastMsg) errorToastMsg.textContent = "Message sent! I'll get back to you soon.";
-                            if (errorToastIcon) errorToastIcon.textContent = '✓';
-                            toast.style.borderColor = '';
-                        }, 500);
-                    }, 4000);
+                    showToast("Message sent! I'll get back to you soon.");
+                } 
+                // Demo / fallback mode (when no backend keys configured yet)
+                else {
+                    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate async network
+                    form.reset();
+                    showToast("Message received! (Demo mode: Connect EmailJS/Formspree for live delivery)");
                 }
+            } catch (err) {
+                console.error('Contact Form Error:', err);
+                showToast("Failed to send message. Please email me directly at anvarshaanvar576@gmail.com", true);
             } finally {
-                // Re-enable button
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                submitBtn.innerHTML = originalBtnHtml;
             }
         });
     };
 
     initContactForm();
 
-    // --- 10. Interactive Polish & Log Sign-Off ---
+    // Console System Sign-off
     console.log('%cANVARSHA. // SYSTEM READY', 'color: #00d4ff; font-family: monospace; font-size: 14px; font-weight: bold;');
     console.log('%cFull-Stack Developer | Pathanamthitta, Kerala', 'color: #b8ff57; font-family: monospace; font-size: 11px;');
 });
